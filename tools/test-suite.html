@@ -1,0 +1,135 @@
+<script type="text/javascript">
+    if (location.search.startsWith("?_ijt")) {
+        let path = location.pathname;
+        location = 'https://localhost:8443' + path.substring(path.indexOf('/', 1 + path.indexOf('/', 1)));
+    }
+</script>
+
+<script src="/node_modules/jquery/dist/jquery.min.js"></script>
+
+<script src="/node_modules/mocha/mocha.js"></script>
+<script src="/node_modules/chai/chai.js"></script>
+
+<script src="/node_modules/babel-standalone/babel.min.js"></script>
+<script src="/node_modules/systemjs/dist/system.src.js"></script>
+<script src="/public/system.config.js"></script>
+
+<script type="text/javascript">
+
+    const $script = $('script[is="test-suite"]');
+    if ($script.length === 0) {
+        console.warn("no <script is='test-suite'> found in html");
+    }
+
+    let mode = $script.attr("mode") || "bdd";
+    let use = $script.attr("use") || mode === "bdd" && "expect" || "assert";
+
+    mocha.setup('tdd'); // This enables suiteSetup & setup for the hidden setup of the suite...
+    mocha.setup(mode);
+
+    if (use === "assert") {
+        window.assert = chai.assert;
+    } else {
+        window.expect = chai.expect;
+        chai.should();
+    }
+
+    function resolveKey($script) {
+        const key = $script.attr('id');
+        if (key) {
+            return System.resolve("./" + key);
+        } else {
+            const pathname = location.pathname;
+            return System.resolve("./" + pathname.substring(1 + pathname.lastIndexOf("/"), pathname.lastIndexOf(".")));
+        }
+    }
+
+    resolveKey($script).then(moduleKey => {
+
+        let source = $script.text();
+
+        const output = Babel.transform(source, {
+            compact: false,
+            moduleId: moduleKey,
+            moduleIds: true,
+            babelrc: false,
+            filename: moduleKey + ".src.js",
+            sourceMap: "inline",
+            plugins: [
+                "transform-es2015-modules-systemjs",
+                "transform-decorators-legacy"
+            ]
+        });
+        (0, eval)(`${output.code}\n//# sourceURL=${moduleKey}.js`);
+
+        $script.html('');
+        $script.replaceWith(`<!-- script transpiled into module: ${moduleKey}.src.js --\>`);
+
+        $(document).ready(function () {
+
+            $(`<link rel="stylesheet" href="/node_modules/mocha/mocha.css"/>`).appendTo('head');
+            $(`<div id="mocha">`).appendTo('body');
+
+            let fixture = document.createElement('fixture');
+            fixture.style = "display: block; margin: 16px";
+            document.body.append(fixture);
+
+            suiteSetup(function () {
+                let template, element;
+                Object.defineProperty(this, 'template', {
+                    configurable: true,
+                    get() {
+                        if (!template) {
+                            template = document.querySelector('template[for="' + this.test.title + '"]');
+                            if (!template) {
+                                template = document.querySelector('template');
+                            }
+                        }
+                        return template;
+                    }
+                })
+                Object.defineProperty(this, 'element', {
+                    configurable: true,
+                    get() {
+                        if (!element) {
+                            if (this.template) {
+                                element = document.importNode(this.template.content, true).firstElementChild;
+                            } else {
+                                element = document.createElement('div');
+                            }
+                            element.setAttribute("title", this.test.title);
+                            fixture.appendChild(element);
+                        }
+                        return element;
+                    }
+                })
+            });
+
+            mocha.checkLeaks();
+            mocha.globals(['jQuery']);
+
+            System.import(moduleKey).then(() => {
+
+                let runner = mocha.run();
+
+                let passes = 0;
+                let failures = 0;
+
+                runner.on('pass', function (test) {
+                    passes++;
+                    console.log('pass:', test.fullTitle());
+                });
+
+                runner.on('fail', function (test, err) {
+                    failures++;
+                    console.log('fail:', test.fullTitle(), '--', 'error:', err.stack);
+                });
+
+                runner.on('end', function () {
+                    console.log('end:', passes, passes + '/' + failures);
+                });
+            });
+        });
+    });
+
+</script>

@@ -1,0 +1,80 @@
+<link rel="import" href="../../../tools/test-suite.html"/>
+
+<template>
+    <div class="container"></div>
+</template>
+
+<script is="test-suite" mode="bdd" use="assert">
+
+
+    describe("nested mutation observers", function () {
+
+        let observer, observedMutationsCount;
+
+        before(function () {
+            observer = new MutationObserver(function (mutations) {
+                mutations.forEach(function (mutation) {
+                    for (const addedNode of mutation.addedNodes) {
+                        observedMutationsCount++;
+                        addedNode.resolveAdded(mutation.target);
+                    }
+                });
+            });
+        })
+
+        beforeEach(function () {
+            observedMutationsCount = 0;
+        });
+
+        it("container with two children", async function () {
+
+            let container = this.element;
+
+            observer.observe(container, {attributes: true, childList: true, subtree: true});
+
+            const first = document.createElement("first-child");
+            first.added = new Promise(resolve => first.resolveAdded = resolve);
+
+            container.append(first);
+
+            assert.equal(await first.added, container);
+
+            const second = document.createElement("second-child");
+            second.added = new Promise(resolve => second.resolveAdded = resolve);
+
+            container.append(second);
+
+            assert.equal(await second.added, container);
+
+            assert.equal(observedMutationsCount, 2);
+        })
+
+        it("a child and a grandchild", async function () {
+
+            let container = this.element;
+
+            observer.observe(container, {attributes: true, childList: true, subtree: true});
+
+            const first = document.createElement("first-child");
+            first.added = new Promise(resolve => first.resolveAdded = resolve);
+
+            container.append(first);
+
+            assert.equal(await first.added, container);
+
+            const second = document.createElement("second-child");
+            second.added = new Promise(resolve => second.resolveAdded = resolve);
+
+            first.append(second);
+
+            assert.equal(await second.added, first);
+
+            assert.equal(observedMutationsCount, 2);
+        })
+
+        after(function () {
+            observer.disconnect();
+        })
+    });
+
+</script>

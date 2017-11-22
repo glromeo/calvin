@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <style>
+
+            /* set up the keyframes; remember to create prefixed keyframes too! */
+            @keyframes nodeInserted {
+                from { opacity: 0.99; }
+                to { opacity: 1; }
+            }
+
+            body [linkable] {
+                animation-duration: 1ms;
+                animation-name: nodeInserted;
+            }
+
+        </style>
+    </head>
+    <body>
+        <div class="container"></div>
+        <script>
+
+            class PaperElement extends HTMLElement {
+                connectedCallback() {
+                    console.warn("connected:", this);
+                }
+            }
+
+            customElements.define("p-el", PaperElement);
+
+            var insertListener = function(event){
+                if (event.animationName == "nodeInserted") {
+                    // This is the debug for knowing our listener worked!
+                    // event.target is the new node!
+                    console.warn("Another node has been inserted! ", event, event.target);
+
+                    event.target.removeAttribute("linkable");
+                }
+            }
+
+            document.addEventListener("animationstart", insertListener, false); // standard + firefox
+
+        </script>
+    </body>
+</html>

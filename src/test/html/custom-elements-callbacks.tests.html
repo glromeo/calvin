@@ -1,0 +1,107 @@
+<link rel="import" href="../../../tools/test-suite.html"/>
+
+<script is="test-suite" mode="tdd">
+
+    import {CustomElement} from "calvin/elements/@CustomElement";
+
+    const log = [];
+
+    setup(function () {
+        log.length = 0;
+    });
+
+    @CustomElement('test-element')
+    class TestElement extends HTMLElement {
+        constructor() {
+            super();
+            log.push({id: this.getAttribute('id'), callback: 'constructor'});
+        }
+
+        static get observedAttributes() {
+            return ['name'];
+        }
+
+        connectedCallback() {
+            log.push({id: this.getAttribute('id'), callback: 'connected', properties: this.properties});
+        }
+
+        disconnectedCallback() {
+            log.push({id: this.getAttribute('id'), callback: 'disconnected'});
+        }
+
+        attributeChangedCallback(attributeName, oldValue, newValue) {
+            this[attributeName] = newValue;
+            log.push({id: this.getAttribute('id'), callback: 'attribute', name: attributeName, value: newValue});
+        }
+    }
+
+    suite('custom elements', function () {
+
+        test('connect & disconnect order', function () {
+            let {element} = this;
+            element.innerHTML = `
+                <test-element id="a">
+                    <test-element id="b" name="bee">
+                        <test-element id="c" name="see"></test-element>
+                    </test-element>
+                </test-element>
+                `;
+            assert.equal(log[0].callback + ":" + log[0].id, 'constructor:a');
+            assert.equal(log[1].callback + ":" + log[1].id, 'connected:a');
+            assert.equal(log[2].callback + ":" + log[2].id, 'constructor:b');
+            assert.equal(log[3].callback + ":" + log[3].id, 'attribute:b');
+            assert.equal(log[4].callback + ":" + log[4].id, 'connected:b');
+            assert.equal(log[5].callback + ":" + log[5].id, 'constructor:c');
+            assert.equal(log[6].callback + ":" + log[6].id, 'attribute:c');
+            assert.equal(log[7].callback + ":" + log[7].id, 'connected:c');
+
+            assert.equal(log[3].name + ":" + log[3].value, 'name:bee');
+            assert.equal(log[6].name + ":" + log[6].value, 'name:see');
+
+            let a = element.firstElementChild;
+            let b = a.firstElementChild;
+            let c = b.firstElementChild;
+
+            element.removeChild(a);
+            assert.equal(log.length, 11);
+            assert.equal(log[8].callback + ":" + log[8].id, 'disconnected:a');
+            assert.equal(log[9].callback + ":" + log[9].id, 'disconnected:b');
+            assert.equal(log[10].callback + ":" + log[10].id, 'disconnected:c');
+
+            element.appendChild(b);
+            assert.equal(log.length, 13);
+            assert.equal(log[11].callback + ":" + log[11].id, 'connected:b');
+            assert.equal(log[12].callback + ":" + log[12].id, 'connected:c');
+        });
+
+        test('propagating properties', function () {
+            let {element} = this;
+
+            const template = document.createElement('template');
+            template.innerHTML = `
+                    <test-element id="a">
+                        <test-element id="b">
+                            <test-element id="c"></test-element>
+                        </test-element>
+                    </test-element>
+                `;
+
+            let instance = document.importNode(template.content, true);
+            instance.firstElementChild.firstElementChild.properties = {name: 'sample'};
+
+            element.appendChild(instance);
+
+            assert.equal(log[0].callback + ":" + log[0].id, 'constructor:a');
+            assert.equal(log[1].callback + ":" + log[1].id, 'constructor:b');
+            assert.equal(log[2].callback + ":" + log[2].id, 'constructor:c');
+            assert.equal(log[3].callback + ":" + log[3].id, 'connected:a');
+            assert.equal(log[4].callback + ":" + log[4].id, 'connected:b');
+            assert.equal(log[5].callback + ":" + log[5].id, 'connected:c');
+
+            assert.equal(log[4].properties.name, 'sample', "properties are preserved over upgrade");
+        });
+
+    });
+
+</script>
+

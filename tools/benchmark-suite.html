@@ -1,0 +1,75 @@
+<script type="text/javascript">
+    if (location.search.startsWith("?_ijt")) {
+        let path = location.pathname;
+        location = 'https://localhost:8443' + path.substring(path.indexOf('/', 1 + path.indexOf('/', 1)));
+    }
+</script>
+
+<script src="/node_modules/jquery/dist/jquery.min.js"></script>
+
+<script src="/node_modules/mocha/mocha.js"></script>
+<script src="/node_modules/chai/chai.js"></script>
+
+<script src="/node_modules/babel-standalone/babel.min.js"></script>
+<script src="/node_modules/systemjs/dist/system.js"></script>
+<script src="/public/system.config.js"></script>
+
+<script type="text/javascript">
+
+    const $script = $('script[is="benchmark-suite"]');
+    if ($script.length === 0) {
+        console.warn("no <script is='benchmark-suite'> found in html");
+    }
+
+    let title = $script.attr("title");
+
+    let autorun = $script.attr("autorun");
+
+    System.resolve("./" + ($script.attr('id') || 'benchmark-suite')).then(moduleKey => {
+
+        let source = $script.text();
+
+        const output = Babel.transform(source, {
+            compact: false,
+            moduleId: moduleKey,
+            moduleIds: true,
+            babelrc: false,
+            filename: moduleKey,
+            sourceMap: "inline",
+            plugins: [
+                "transform-es2015-modules-systemjs",
+                "transform-decorators-legacy"
+            ]
+        });
+
+        $script.html('');
+        $script.replaceWith(`<!-- script transpiled into module: ${moduleKey} --\>`);
+
+        return new Promise(resolve => {
+
+            $(document).ready(function () {
+
+                $(`<link rel="stylesheet" href="/node_modules/astrobench/src/style.css"/>`).appendTo('head');
+
+                $(`<div id="astrobench">`).appendTo('body');
+
+                let astrobench = document.createElement('script')
+                astrobench.src = "/node_modules/astrobench/dist/astrobench.js";
+                astrobench.onload = function () {
+                    (0, eval)(`${output.code}\n//# sourceURL=${moduleKey}.js`);
+                    System.import(moduleKey).then(() => setTimeout(resolve, 100));
+                };
+                document.body.appendChild(astrobench);
+
+                let empty = document.createElement('script');
+                document.body.appendChild(empty);
+            })
+
+        });
+
+    }).then(() => {
+        if (autorun === "" || autorun === "true") {
+            $('.fn-run-tests')[0].click();
+        }
+    });
+</script>

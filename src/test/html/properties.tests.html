@@ -1,0 +1,87 @@
+<link rel="import" href="../../../local/test-suite.html"/>
+
+<test-suite title="test-suite" assert>
+
+    <script type="module">
+
+        import {CustomElement} from "calvin/elements/@CustomElement";
+        import {Properties} from "calvin/elements/@Properties";
+        import {PaperElement} from "calvin/elements/paper-element";
+        import {Scope} from "calvin/scope";
+
+        @CustomElement
+        class ParentElement extends PaperElement {
+            static get properties() {
+                return {
+                    overridden: "parent value",
+                    inherited: "inherited"
+                }
+            }
+        }
+
+        @CustomElement
+        @Properties({
+            overridden: "child value"
+        })
+        class ChildElement extends ParentElement {
+        }
+
+        @CustomElement
+        @Properties({
+            overridden: "alt value"
+        })
+        class AltElement extends PaperElement {
+        }
+
+
+        describe('properties definition', function () {
+
+            before(function () {
+                this.container.$scope = new Scope();
+            })
+
+            it('sibling elements in hierarchy', function () {
+
+                let {element} = this.test.ctx;
+
+                element.innerHTML = '<parent-element></parent-element><child-element></child-element>';
+
+                const parent = element.firstElementChild;
+                const child = parent.nextElementSibling;
+
+                assert.equal(parent.$scope.overridden, "parent value");
+                assert.equal(child.$scope.overridden, "child value");
+                assert.equal(child.$scope.inherited, "inherited");
+
+                parent.$scope.inherited = "changed";
+                assert.equal(parent.$scope.inherited, "changed");
+                assert.equal(child.$scope.inherited, "inherited");
+
+                parent.constructor.properties.inherited = "changed";
+                assert.equal(parent.constructor.properties.inherited, "inherited");
+
+                child.constructor.properties.inherited = "changed";
+                assert.equal(child.constructor.properties.inherited, "inherited");
+            });
+
+            it('parent/child elements NOT in hierarchy', function () {
+
+                let {element} = this.test.ctx;
+
+                element.innerHTML = '<parent-element><alt-element></alt-element></parent-element>';
+
+                const parent = element.firstElementChild;
+                const child = parent.firstElementChild;
+
+                assert.equal(parent.$scope.overridden, "parent value");
+                assert.equal(child.$scope.overridden, "alt value");
+                assert.equal(child.$scope.inherited, "inherited");
+
+                parent.$scope.inherited = "changed";
+                assert.equal(child.$scope.inherited, "changed");
+            });
+        });
+
+    </script>
+</test-suite>
+

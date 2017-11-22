@@ -1,0 +1,45 @@
+<link rel="import" href="../../../tools/test-suite.html"/>
+
+<style type="text/css">
+    fixture {
+        margin: 10px;
+        padding: 10px;
+        border: 1px solid rgba(0,128,0,0.25);
+        background: rgba(0,128,0,0.125);
+        border-radius: 10px;
+        box-shadow: inset 3px 3px 6px rgba(64,64,64,0.125);
+    }
+</style>
+
+<script is="test-suite" mode="bdd">
+
+    import "calvin/elements/paper-element";
+    import Jexl from "jexl";
+
+    describe('Custom Elements', function () {
+
+        before(function () {
+        });
+
+        it('isLinked promise', async function () {
+            this.element.message = "Hello world";
+            this.element.innerHTML = '<paper-element>{{message}}</paper-element>'
+            const paperElement = this.element.firstElementChild;
+            const isLinked = paperElement.isLinked;
+            expect(paperElement.isLinked = true).to.equal(true);
+            return isLinked;
+        });
+
+        it("Jexl", function () {
+            return Jexl.eval("message", new Proxy({}, {
+                get(target, property) {
+                    if (!target.hasOwnProperty(property)) {
+                        console.log(property)
+                    }
+                }
+            }))
+        })
+    });
+
+</script>
+

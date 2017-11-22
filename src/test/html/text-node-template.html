@@ -1,0 +1,71 @@
+<link rel="import" href="../../../tools/test-suite.html"/>
+
+<script is="test-suite" mode="bdd">
+
+    import {CustomElement} from "calvin/elements/@CustomElement";
+    import {Properties} from "calvin/elements/@Properties";
+    import {PaperElement} from "calvin/elements/paper-element";
+    import {Ready} from "calvin/elements/@Ready";
+    import {Scope} from "calvin/scope";
+    import {Linked} from "calvin/elements/@Linked";
+
+    @CustomElement
+    @Properties({
+        message: "I am the parent"
+    })
+    class FirstElement extends PaperElement {
+
+        constructor() {
+            super();
+        }
+
+        @Linked
+        appendExclamationMark($scope) {
+            assert.isDefined($scope);
+            $scope.message += '!';
+        }
+    }
+
+    @CustomElement
+    @Properties({
+        message: "I am the child"
+    })
+    class SecondElement extends PaperElement {
+
+        constructor() {
+            super();
+        }
+
+        @Ready
+        appendExclamationMarks($scope) {
+            assert.isDefined($scope);
+            this.firstChild.nodeValue += '!!';
+        }
+    }
+
+    describe('Custom Elements', function () {
+
+        before(function () {
+            this.container.$scope = new Scope();
+        });
+
+        it('element with properties', async function () {
+            const {element} = this.test.ctx;
+            element.innerHTML = '<first-element>{{message}}</first-element>'
+            const target = element.firstElementChild;
+            await target.isLinked;
+            expect(target.innerHTML.trim()).to.equal("I am the parent!");
+        });
+
+        it('element with properties', async function () {
+            const {element} = this.test.ctx;
+            element.innerHTML = '<first-element>{{message}}\n    <second-element>{{message}}</second-element>\n</first-element>'
+            const target = element.firstElementChild.firstElementChild;
+            await target.isLinked;
+            expect(target.innerHTML.trim()).to.equal("I am the child!!");
+        });
+    });
+
+</script>
+
+

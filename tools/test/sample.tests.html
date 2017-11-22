@@ -1,0 +1,117 @@
+<link rel="import" href="../test-suite.html"/>
+
+<template>
+    <parent-element>
+        <child-element></child-element>
+    </parent-element>
+</template>
+
+<script is="test-suite" use="assert">
+
+    describe('Features', function () {
+
+        describe('Features', function () {
+
+            let first;
+
+            it('each test has his element...', async function () {
+                let {element} = this;
+                assert.equal(element.tagName.toLowerCase(), 'parent-element');
+
+                first = element;
+            });
+
+            it('...and they are different instances', async function () {
+                let {element} = this;
+                assert.equal(element.tagName.toLowerCase(), 'parent-element');
+                assert.equal(first.innerHTML, element.innerHTML);
+                assert.isFalse(first === element);
+            });
+        });
+
+        it('each test has access to the template as well', async function () {
+            let {template, element} = this;
+            let root = template.content.firstElementChild;
+            assert.equal(root.tagName, 'PARENT-ELEMENT');
+            let clone = document.importNode(template.content, true).firstElementChild;
+            assert.equal(clone.tagName, element.tagName);
+        });
+
+        setTimeout(() => {
+
+            it('the runner will create an istance of the template for each it', function () {
+                let actual = document.querySelectorAll("div[title='custom elements'] parent-element").length;
+                assert.equal(actual, 4);
+            });
+
+        }, 1000);
+    });
+
+    describe('Custom Elements', function () {
+
+        const log = [];
+
+        console.log = (delegate => function () {
+            if (arguments[0] === '****') {
+                log.push(arguments[1]);
+            }
+            delegate.apply(this, arguments);
+        })(console.log)
+
+        class ParentElement extends HTMLElement {
+            constructor() {
+                super();
+                console.log("****", this.tagName + ": parent constructor");
+            }
+
+            connectedCallback() {
+                console.log("****", this.tagName + ": connectedCallback");
+            }
+
+            disconnectedCallback() {
+                console.log("****", this.tagName + ": disconnectedCallback");
+            }
+        }
+
+        class ChildElement extends ParentElement {
+            constructor() {
+                super();
+                console.log("****", this.tagName + ": child constructor");
+            }
+
+            connectedCallback() {
+                console.log("****", this.tagName + ": connectedCallback");
+            }
+
+            disconnectedCallback() {
+                console.log("****", this.tagName + ": disconnectedCallback");
+            }
+        }
+
+        it('callbacks are invoked in order', async function () {
+
+            customElements.define("parent-element", ParentElement);
+            customElements.define("child-element", ChildElement);
+
+            assert.deepEqual(log, [
+                "PARENT-ELEMENT: parent constructor",
+                "PARENT-ELEMENT: connectedCallback",
+                "PARENT-ELEMENT: parent constructor",
+                "PARENT-ELEMENT: connectedCallback",
+                "PARENT-ELEMENT: parent constructor",
+                "PARENT-ELEMENT: connectedCallback",
+                "CHILD-ELEMENT: parent constructor",
+                "CHILD-ELEMENT: child constructor",
+                "CHILD-ELEMENT: connectedCallback",
+                "CHILD-ELEMENT: parent constructor",
+                "CHILD-ELEMENT: child constructor",
+                "CHILD-ELEMENT: connectedCallback",
+                "CHILD-ELEMENT: parent constructor",
+                "CHILD-ELEMENT: child constructor",
+                "CHILD-ELEMENT: connectedCallback"
+            ]);
+        });
+    });
+
+</script>
+

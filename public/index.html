@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <link rel="shortcut icon" href="images/cobra.png">
+    <link rel="stylesheet" href="/css/main.css" media="screen,print">
+    <style type="text/css">
+    </style>
+    <script src="globals.js"></script>
+    <script src="/node_modules/jquery/dist/jquery.min.js"></script>
+</head>
+<body>
+<template id="report-template">
+    <paper-report format="A4" orientation="landscape">
+        <script type="report/data">
+            console.log("running scope/data script in:", this, window);
+            this.users = $.ajax("/data/users.csv", {dataType: "csv"});
+            this.gender = ['male', 'female'];
+        </script>
+        <report-page title="Static Page">
+            <page-header style="background-color: red">
+                <div>First</div>
+                <div>{{page.title}}</div>
+                <div></div>
+            </page-header>
+            <page-body style="background-color: white">
+                <div>Simple static page</div>
+            </page-body>
+            <page-footer style="background-color: green">
+                <div></div>
+                <div>Bottom</div>
+                <div>pg. {{page.number}}</div>
+            </page-footer>
+        </report-page>
+        <report-page title="Users">
+            <page-header style="background-color: red">
+                <div>L</div>
+                <div>{{page.title}}</div>
+                <div>R</div>
+            </page-header>
+            <page-body style="background-color: white">
+                <div>${{male: 'Men', female: 'Women'}[gender]}</div>
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Cuisine</th>
+                        <th>Borough</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <template is="render-fragment" for-each="user of users">
+                        <tr>
+                            <td>{{user.id}}</td>
+                            <td>{{user.firstName}}</td>
+                            <td>{{user.lastName}}</td>
+                            <td>{{user.email}}</td>
+                            <td>{{user.gender}}</td>
+                            <td>{{user.ipAddress}}</td>
+                        </tr>
+                    </template>
+                    </tbody>
+                </table>
+            </page-body>
+            <page-footer style="background-color: blue">
+                <div></div>
+                <div>Bottom</div>
+                <div>pg. {{page.number}}</div>
+            </page-footer>
+        </report-page>
+    </paper-report>
+</template>
+<!--<script src="/node_modules/bluebird/js/browser/bluebird.min.js"></script>-->
+<script src="/node_modules/systemjs/dist/system.js"></script>
+<script src="./system.config.js"></script>
+
+<script type="text/javascript">
+
+    SystemJS.import('calvin').then(function (module) {
+
+        let template = document.querySelector('#report-template');
+        if (!template) {
+            return;
+        }
+
+        let instance = document.importNode(template.content, true);
+        document.querySelector('body').appendChild(instance);
+
+        console.info("bootstrap done");
+
+        if (typeof require !== "function") {
+            console.log("require is not a function")
+            return;
+        }
+
+        const {remote, ipcRenderer} = require('electron');
+
+        module.paths.push(remote.app.getAppPath() + '/node_modules');
+
+        window.$ = window.jQuery = require('jquery');
+
+        setTimeout(function () {
+            console.log("sending printToPDF message");
+            ipcRenderer.send("printToPDF", {
+                fileName: "work/output.pdf", pageSize: {
+                    width: 297000,
+                    height: 210000
+                }
+            });
+        }, 2500);
+
+    }, console.error.bind(console));
+
+</script>
+</body>
+</html>

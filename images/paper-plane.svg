@@ -1,0 +1,13 @@
+<?xml version="1.0" ?>
+<svg style="overflow:visible" viewBox="0 0 32 24" width="64" height="48" xml:space="preserve" xmlns="http://www.w3.org/2000/svg">
+    <g>
+        <g id="Paper_Plane">
+            <g id="Paper_Plane_1_">
+                <polygon id="Bttom_Fold" points="13.5,17.6 13.5,23.6 22,17.6 " style="fill: #BF1C1C"/>
+                <polygon id="Fold" points="13.5,23.6 10,16.6 32,0 13.5,17.6 " style="fill: #D72828"/>
+                <polygon id="Right_Wing" points="24,23.6 13.5,17.6 32,0 " style="fill: #FF3939"/>
+                <polygon id="Left_Wing" points="10,16.6 0,14.6 32,0 " style="fill: #FF3939"/>
+            </g>
+        </g>
+    </g>
+</svg>

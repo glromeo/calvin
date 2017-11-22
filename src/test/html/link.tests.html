@@ -1,0 +1,48 @@
+<link rel="import" href="../../../tools/test-suite.html"/>
+
+<script is="test-suite" mode="tdd">
+
+    import {CustomElement} from "/calvin/elements/@CustomElement";
+    import {PaperElement} from "/calvin/elements/paper-element";
+
+    const log = [];
+
+    @CustomElement
+    class TestElement extends PaperElement {
+
+        @before('link')
+        beforeLink() {
+            log.push("before");
+        }
+
+        @after('link')
+        afterLink() {
+            log.push("after");
+        }
+    }
+
+    describe('Custom Elements', function () {
+
+        before(function () {
+            bootstrap(this.container);
+        });
+
+        it('element with properties', async function () {
+            const {element} = this.test.ctx;
+            element.innerHTML = '<first-element>{{message}}</first-element>'
+            const target = element.firstElementChild;
+            await target.isLinked;
+            expect(target.innerHTML.trim()).to.equal("I am the first!");
+        });
+
+        it('element with properties', async function () {
+            const {element} = this.test.ctx;
+            element.innerHTML = '<first-element>{{message}}<second-element>{{message}}</second-element></first-element>'
+            const target = element.firstElementChild.firstElementChild;
+            await target.isLinked;
+            expect(target.innerHTML.trim()).to.equal("I am the second!");
+        });
+    });
+
+</script>
+

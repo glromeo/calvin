@@ -1,0 +1,31 @@
+<link rel="import" href="../../../tools/test-suite.html"/>
+
+<!-- This template is going to be instantiated for each test! -->
+<template>
+    <dom-root></dom-root>
+</template>
+
+<script is="test-suite" mode="tdd">
+
+
+    import {CustomElement} from "calvin/elements/@CustomElement";
+
+    @CustomElement
+    class DomRoot extends HTMLElement {
+    }
+
+    describe('Custom Elements', function () {
+        it('template instantiated', function () {
+            expect(document.querySelectorAll('dom-root').length).to.equal(1);
+        });
+        it('template once per test', function () {
+            expect(document.querySelectorAll('dom-root').length).to.equal(2);
+        });
+        it('current template available in test context', function () {
+            const template = this.test.ctx.template;
+            expect(template).to.not.be.undefined;
+        });
+    });
+
+</script>
+
